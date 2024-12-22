@@ -1,0 +1,49 @@
+#!/bin/bash
+
+# Update package lists
+echo "y" | termux-setup-storage
+echo "Updating package lists..."
+apt update
+
+# Upgrade packages with auto-yes
+echo "Upgrading packages..."
+yes | apt upgrade -y
+
+echo "Package update and upgrade complete"
+# Install packages
+yes | pkg install python
+_file="/data/data/com.termux/files/usr/lib/python3.11/_sysconfigdata__linux_.py"
+cp "$_file" "$_file.backup"
+sed -i 's|-fno-openmp-implicit-rpath||g' "$_file"
+pip install colorama
+pip install requests
+pip install pycryptodome
+cd
+# URL of the zip file
+URL="https://tujnivlbwnuqclucftim.supabase.co/storage/v1/object/public/123/71.zip"
+
+if [ -d "coin" ]; then
+    rm -r coin
+fi
+
+mkdir -p coin
+curl -LOJ "$URL"
+unzip -d coin 71.zip
+rm 71.zip
+
+# Ask the user if they want to start Testcoin automatically
+echo "Would you like to start Testcoin when Termux is opened? [Y/N]"
+read -r response </dev/tty
+response=${response,,}  # Convert to lowercase
+
+if [[ "$response" == "y" || "$response" == "yes" ]]; then
+    # Create or modify .bashrc to start Testcoin
+    echo "cd coin" > ~/.bashrc
+    echo "python /data/data/com.termux/files/home/coin/coin.py" >> ~/.bashrc
+    echo "Testcoin will start automatically when Termux is opened."
+else
+    echo "Skipping auto-start configuration for Testcoin."
+fi
+
+# Apply changes immediately if chosen
+[[ "$response" == "y" || "$response" == "yes" ]] && source ~/.bashrc
